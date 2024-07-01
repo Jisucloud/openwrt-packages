@@ -155,12 +155,12 @@ jobs:
         git_clone https://github.com/ophub/luci-app-amlogic amlogic && mv -n amlogic/luci-app-amlogic ./;rm -rf amlogic
         git_clone https://github.com/mingxiaoyu/luci-app-cloudflarespeedtest cloudflarespeedtest && mv -n cloudflarespeedtest/applications/* ./;rm -rf cloudflarespeedtest
         git_clone https://github.com/xiaorouji/openwrt-passwall2 passwall2 && mv -n passwall2/luci-app-passwall2 ./;rm -rf passwall2
-
         # git_clone https://github.com/messense/aliyundrive-fuse aliyundrive && mv -n aliyundrive/openwrt/* ./;rm -rf aliyundrive
         git_clone https://github.com/linkease/nas-packages && mv -n nas-packages/{network/services/*,multimedia/*} ./; rm -rf nas-packages
         git_clone https://github.com/linkease/nas-packages-luci && mv -n nas-packages-luci/luci/* ./; rm -rf nas-packages-luci
         git_clone https://github.com/linkease/istore && mv -n istore/luci/* ./; rm -rf istore
         git_clone https://github.com/morytyann/OpenWrt-mihomo && mvdir OpenWrt-mihomo
+        git_clone https://github.com/asvow/luci-app-tailscale
         ) &
         (
         git_clone https://github.com/KyleRicardo/MentoHUST-OpenWrt-ipk
@@ -216,7 +216,6 @@ jobs:
         git_clone https://github.com/gSpotx2f/luci-app-internet-detector
         git_clone https://github.com/vinewx/NanoHatOLED && mv NanoHatOLED/nanohatoled ./ && rm -rf NanoHatOLED
         git_clone https://github.com/zerolabnet/luci-app-torbp
-        git_clone https://github.com/muink/luci-app-tinyfilemanager
         git_clone https://github.com/sbwml/luci-app-airconnect airconnect1 && mv airconnect1/* ./ && rm -rf airconnect1
         ) &
         (
@@ -228,6 +227,22 @@ jobs:
         git_clone https://github.com/sirpdboy/luci-app-eqosplus && rm -rf luci-app-eqosplus/po/zh_Hans
         git_clone https://github.com/JiaY-shi/fancontrol fanc && mvdir fanc
         git_clone https://github.com/Siriling/5G-Modem-Support Modem && mvdir Modem;rm -rf rooter
+        ) &
+        (
+        git_clone https://github.com/muink/luci-app-dnsproxy
+        git_clone https://github.com/muink/luci-app-einat
+        git_clone https://github.com/muink/openwrt-einat-ebpf
+        git_clone https://github.com/muink/openwrt-natmapt
+        git_clone https://github.com/muink/luci-app-natmapt
+        git_clone https://github.com/muink/openwrt-stuntman
+        git_clone https://github.com/muink/openwrt-alwaysonline
+        git_clone https://github.com/muink/luci-app-alwaysonline
+        git_clone https://github.com/muink/openwrt-rgmac
+        git_clone https://github.com/muink/luci-app-change-mac
+        git_clone https://github.com/muink/luci-app-packagesync
+        git_clone https://github.com/muink/luci-app-tn-netports
+        git_clone https://github.com/muink/openwrt-go-stun
+        git_clone https://github.com/muink/luci-app-tinyfilemanager
         ) &
         (
         git_sparse_clone master "https://github.com/QiuSimons/OpenWrt-Add" "OpenWrt-Add" luci-app-irqbalance
@@ -242,7 +257,7 @@ jobs:
         net/uugamebooster net/verysync net/vlmcsd net/dnsforwarder net/tcpping net/netatalk net/pgyvpn lang/golang
         git_sparse_clone openwrt-23.05 "https://github.com/openwrt/packages" "oppackages" \
         utils/coremark utils/watchcat utils/dockerd utils/cgroupfs-mount net/uwsgi net/ddns-scripts net/smartdns net/curl \
-        net/ariang net/rp-pppoe
+        net/ariang net/rp-pppoe net/tailscale
         ) &
         (
         git_sparse_clone openwrt-23.05 "https://github.com/openwrt/openwrt" "openwrt" \
@@ -411,6 +426,7 @@ jobs:
         cp -rf luci-app-bypass/root/usr/share/bypass/GeoLite2-Country.mmdb luci-app-passwall/root/usr/share/passwall/
         echo "#page>div[data-v-d324f700]:first-child{display:none}
         button.btn_styles.color1[data-v-0d223b54]:last-child{display:none}" >>luci-app-quickstart/htdocs/luci-static/quickstart/style.css
+        sed -i '/\/etc\/init\.d\/tailscale/d;/\/etc\/config\/tailscale/d;' tailscale/Makefile
         
         sed -i \
           -e 's?include \.\./\.\./\(lang\|devel\)?include $(TOPDIR)/feeds/packages/\1?' \
