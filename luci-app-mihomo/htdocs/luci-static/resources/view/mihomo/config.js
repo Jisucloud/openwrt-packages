@@ -3,6 +3,7 @@
 'require view';
 'require uci';
 'require fs';
+'require network';
 'require rpc';
 'require poll';
 'require tools.widgets as widgets';
@@ -32,6 +33,10 @@ async function getServiceStatus() {
     } catch (ignored) {
         return false;
     }
+}
+
+function getHostHints(){
+    return L.resolveDefault(network.getHostHints(), { hosts: {} });
 }
 
 function getAppVersion() {
@@ -93,6 +98,7 @@ return view.extend({
             getAppVersion(),
             getCoreVersion(),
             getServiceStatus(),
+            getHostHints(),
         ]);
     },
     render: function (data) {
@@ -101,6 +107,7 @@ return view.extend({
         const appVersion = data[2];
         const coreVersion = data[3];
         const running = data[4];
+        const hosts = data[5].hosts;
 
         let m, s, o, so;
 
@@ -172,6 +179,12 @@ return view.extend({
         o.value('tproxy', _('TPROXY Mode'));
         o.value('tun', _('TUN Mode'));
 
+        o = s.taboption('transparent_proxy', form.Flag, 'ipv4_dns_hijack', _('IPv4 DNS Hijack'));
+        o.rmempty = false;
+
+        o = s.taboption('transparent_proxy', form.Flag, 'ipv6_dns_hijack', _('IPv6 DNS Hijack'));
+        o.rmempty = false;
+
         o = s.taboption('transparent_proxy', form.Flag, 'ipv4_proxy', _('IPv4 Proxy'));
         o.rmempty = false;
 
@@ -181,7 +194,7 @@ return view.extend({
         o = s.taboption('transparent_proxy', form.Flag, 'router_proxy', _('Router Proxy'));
         o.rmempty = false;
 
-        o = s.taboption('transparent_proxy', form.Flag, 'dns_hijack', _('DNS Hijack'));
+        o = s.taboption('transparent_proxy', form.Flag, 'lan_proxy', _('Lan Proxy'));
         o.rmempty = false;
 
         s.tab('access_control', _('Access Control'));
@@ -191,7 +204,6 @@ return view.extend({
         o.value('all', _('All Mode'));
         o.value('allow', _('Allow Mode'));
         o.value('block', _('Block Mode'));
-        o.value('forbid', _('Forbid Mode'));
 
         o = s.taboption('access_control', form.DynamicList, 'acl_ip', 'IP');
         o.datatype = 'ipmask4';
@@ -199,17 +211,39 @@ return view.extend({
         o.depends('access_control_mode', 'allow');
         o.depends('access_control_mode', 'block');
 
+        for (const mac in hosts) {
+            const host = hosts[mac];
+            for (const ip of host.ipaddrs){
+                const hint = host.name || mac;
+                o.value(ip, hint ? '%s (%s)'.format(ip, hint) : ip);
+            }
+        }
+
         o = s.taboption('access_control', form.DynamicList, 'acl_ip6', 'IP6');
         o.datatype = 'ipmask6';
         o.retain = true;
         o.depends('access_control_mode', 'allow');
         o.depends('access_control_mode', 'block');
 
+        for (const mac in hosts) {
+            const host = hosts[mac];
+            for (const ip of host.ip6addrs){
+                const hint = host.name || mac;
+                o.value(ip, hint ? '%s (%s)'.format(ip, hint) : ip);
+            }
+        }
+
         o = s.taboption('access_control', form.DynamicList, 'acl_mac', 'MAC');
         o.datatype = 'macaddr';
         o.retain = true;
         o.depends('access_control_mode', 'allow');
         o.depends('access_control_mode', 'block');
+
+        for (const mac in hosts) {
+            const host = hosts[mac];
+            const hint = host.name || host.ipaddrs[0];
+            o.value(mac, hint ? '%s (%s)'.format(mac, hint) : mac);
+        }
 
         s.tab('bypass', _('Bypass'));
 
@@ -512,31 +546,19 @@ return view.extend({
         o.rmempty = false;
 
         o = s.taboption('sniffer', form.Flag, 'sniff_dns_mapping', _('Sniff Redir-Host'));
-        o.retain = true;
         o.rmempty = false;
-        o.depends('sniffer', '1');
 
         o = s.taboption('sniffer', form.Flag, 'sniff_pure_ip', _('Sniff Pure IP'));
-        o.retain = true;
         o.rmempty = false;
-        o.depends('sniffer', '1');
 
         o = s.taboption('sniffer', form.Flag, 'sniffer_overwrite_dest', _('Overwrite Destination'));
-        o.retain = true;
         o.rmempty = false;
-        o.depends('sniffer', '1');
 
         o = s.taboption('sniffer', form.DynamicList, 'sniffer_force_domain_name', _('Force Sniff Domain Name'));
-        o.retain = true;
-        o.depends('sniffer', '1');
 
         o = s.taboption('sniffer', form.DynamicList, 'sniffer_ignore_domain_name', _('Ignore Sniff Domain Name'));
-        o.retain = true;
-        o.depends('sniffer', '1');
 
         o = s.taboption('sniffer', form.SectionValue, '_sniffer_sniffs', form.TableSection, 'sniff', _('Sniff By Protocol'));
-        o.retain = true;
-        o.depends('sniffer', '1');
 
         o.subsection.anonymous = true;
         o.subsection.addremove = false;
